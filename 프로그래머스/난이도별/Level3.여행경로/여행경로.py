@@ -1,22 +1,22 @@
 from collections import defaultdict
+
 def solution(tickets):
-    path = []
     graph = defaultdict(list)
     
     for (start, end) in tickets:
         graph[start].append(end)
 
-    for airport in graph.keys():
+    for airport in graph:
         graph[airport].sort(reverse=True)
-
-    stack = ["ICN"]
     
+    path = []
+    stack = ["ICN"]
     while stack:
-        x = stack.pop()
-        if x not in graph or not graph[x]:
-            path.append(x)
+        route = stack[-1]
+        if not graph[route]:
+            path.append(stack.pop())
         else:
-            stack.append(x)
-            stack.append(graph[x].pop())
+            next_route = graph[route].pop()
+            stack.append(next_route)
 
     return path[::-1]
