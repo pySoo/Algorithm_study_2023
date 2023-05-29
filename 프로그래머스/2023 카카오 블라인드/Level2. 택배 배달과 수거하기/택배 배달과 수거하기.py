@@ -16,3 +16,4 @@ def solution(cap, n, deliveries, pickups):
             answer += (n - i) * 2
 
     return answer
+    
