@@ -5,6 +5,8 @@
 ```
 📦Algorithms
 ├── 📂BOJ
+|   └── 📂Backtracking
+|   └── 📂Greedy
 │   └── 📂Simulation
 ├── 📂Leetcode
 |   └── 📂Array
