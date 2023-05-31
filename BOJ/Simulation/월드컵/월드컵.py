@@ -7,12 +7,12 @@ answer = []
 game = list(combinations(range(6), 2))
 
 def check_round(round):
-    global ans
+    global count
     if round == 15:
-        ans = 1
+        count = 1
         for sub in result:
             if sub.count(0) != 3:
-                ans = 0
+                count = 0
                 break
         return
 
@@ -29,8 +29,8 @@ for _ in range(4):
   data = list(map(int, input().split()))
   result = [data[i:i + 3] for i in range(0, 16, 3)]
   
-  ans = 0
+  count = 0
   check_round(0)
-  answer.append(ans)
+  answer.append(count)
 
 print(*answer)
