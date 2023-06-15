@@ -10,71 +10,114 @@
 
 4가지 조건과 점수가 담긴 질의문을 만족하는 지원자 수를 구하는 구현 및 이분 탐색 문제였습니다.
 
-풀이에서 중요한 점은 효율성을 통과하기 위해서 해시맵을 만드는 것입니다. 4가지 조건에 대한 2^4개의 경우를 key로 설정하고, 점수를 value로 설정한 dictionary를 만듭니다. 그리고 점수를 오름차순 정렬하여 이분 탐색을 하여야 문제를 통과할 수 있습니다.
+풀이에서 중요한 점은 효율성을 통과하기 위해서 **해시맵을 만들고 이분 탐색으로 탐색 시간을 줄이는 것**입니다. 이전에는 카카오의 풀이를 참고하여 key 조합을 만드는 방식으로 풀이하였는데, 다시 풀어보니 조합 아이디어를 떠올리고 조합에 대한 문자열을 처리하는 것이 쉽지 않았습니다.
+
+그래서 핵심 아이디어인 **해시맵과 이분 탐색 개념**은 가져가되, **스스로 생각해낸 풀이를 적용**하는 방식으로 다시 풀어봤습니다.
+
+1. 점수를 제외한 참가자 정보를 dictionary의 key로 만듭니다. 단, 문자 사이는 ','가 들어갑니다.
+   - 예: { "java,backend,junior,pizza" : [] }
+2. dictionary의 value 값은 참가자의 점수를 나타내는 배열로 설정합니다.
+   - 예: { "java,backend,junior,pizza" : [200, 150] }
+3. 이분 탐색을 위해 dictionary의 점수 값을 정렬합니다.
+   - 예: { "java,backend,junior,pizza" : [150, 200] }
+4. query 반복문에서 'and'를 기준으로 문자열을 split한 배열을 만들고, '-' 문자는 삭제합니다.
+   - 예: cpp and - and senior and pizza 250 -> ["cpp","senior","pizza"]
+5. 참가자 정보가 담긴 dictionary 반복문을 돌면서 해당 key가 4번의 query 리스트를 모두 포함했는지 체크합니다. (check_keys)
+   - 예: "cpp,backend,senior,pizza" -> ','를 기준으로 문자열 리스트로 만들고, 해당 리스트가 4번의 query 리스트를 모두 포함하는지 체크
+   - ["cpp","backend","senior","pizza"]가 ["cpp","senior","pizza"]을 모두 포함하는지 체크
+6. 만약 5번을 만족한다면 이분 탐색을 이용하여 원하는 점수 이상의 값이 처음 나오는 위치를 구합니다. (이를 **Lower Bound**라고 부릅니다.)
+
+> 이분 탐색이 '원하는 값을 찾는 과정' 이라면 Lower Bound는 '원하는 값 이상이 처음 나오는 위치를 찾는 과정' 입니다.
 
 ### 나의 풀이
 
 ```python
-from itertools import combinations
 from collections import defaultdict
 
+def check_keys(key, query_list):
+    key_list = key.split(',')
 
-def solution(infos, queries):
-    answer = []
-    info_dict = defaultdict(list)
-    for info in infos:
-        info = info.split()
-        # 점수 앞에 있는 문자열
-        key = info[:-1]
-        # 점수
-        val = int(info[-1])
-        for i in range(5):
-            # 하나의 info에서 경우의 수 16개 만들기 -> 항목이 4개이므로
-            for combi in combinations(key, i):
-                combi_key = ''.join(combi)
-                info_dict[combi_key].append(val)
+    cnt = 0
+    for key in key_list:
+        if key in query_list:
+            cnt += 1
 
-    for key in info_dict.keys():
-        # lower bound 사용하기 위해 점수를 오름차순으로 정렬
-        info_dict[key].sort()
+    return len(query_list) == cnt
 
-    for query in queries:
-        query = query.split()
-        q_score = int(query[-1])
-        query = query[:-1]
 
-        # and와 -를 제거하고 하나의 문자열로 만듦 = backendjuniorpizza
-        for i in range(3):
-            query.remove('and')
+def check_score(values, score):
+    start, end = 0, len(values) - 1
 
-        while '-' in query:
-            query.remove('-')
+    if values[-1] < score:
+        return 0
 
-        # 리스트를 문자열로
-        q_key = ''.join(query)
-        if q_key in info_dict:
-            scores = info_dict[q_key]
-            if len(scores) > 0:
-                start, end = 0, len(scores)
-                while end > start:
-                    mid = (start + end) // 2
-                    if scores[mid] >= q_score:
-                        end = mid
-                    else:
-                        start = mid + 1
-                answer.append(len(scores) - end)
+    while start < end:
+        mid = (start + end) // 2
+        if values[mid] >= score:
+            end = mid
         else:
-            answer.append(0)
+            start = mid + 1
+
+    return len(values) - end
+
+
+
+def solution(info, query):
+    answer = []
+    applicants = defaultdict(list)
+
+    for command in info:
+        command = command.split()
+        score = int(command[-1])
+        parsed_command = ','.join(command[:-1])
+        applicants[parsed_command].append(score)
+
+    for key in applicants:
+        applicants[key].sort()
+
+    for command in query:
+        command_list = command.replace('and','').split()
+        score = int(command_list[-1])
+
+        command_list = [x for x in command_list if x != '-'][:-1]
+
+        applicant = 0
+        for key, values in applicants.items():
+            if check_keys(key, command_list):
+                applicant += check_score(values, score)
+
+        answer.append(applicant)
+
     return answer
 ```
 
 ### 배운 점
 
-위 문제에서는 이분 탐색 활용 방법과 문자열로 조합을 만들어서 dictionary의 key로 설정하는 해시맵 활용 방법을 배울 수 있었습니다.
+위 문제에서는 이분 탐색과 해시맵 활용 방법을 배울 수 있었습니다. 어려웠던 점은 정확히 어떠한 값을 찾는게 아니고, 주어진 값 **이상의 값이 처음 나오는 위치**를 찾는 문제여서 이분 탐색 코드를 수정하는 것이었습니다.
 
-처음 풀이에서는 사용 언어를 key 값으로 설정하여 다시 그 안에서 문자열을 비교하여 찾도록 하였는데 정확성은 통과하였지만 효율성은 통과하지 못했습니다. 카카오 문제 해설을 참고한 바 binary 탐색으로 해결하는 것이 핵심이었습니다.
+기존의 이분 탐색에서는 정확한 값을 찾기 위해서 값이 일치하지 않을 때 범위를 좁혀주는 식으로 코드를 작성했습니다.
 
-효율성 정답률은 5퍼센트에 준할 정도로 아이디어를 떠올리는게 매우 어려운 문제였습니다. 그래도 이번 문제를 통해 아이디어를 적용하는 방법을 배워두었으니, 앞으로 정렬과 탐색이 필요한 문제에서는 해당 풀이를 떠올려볼 수 있을 것 같습니다.
+```Python
+if values[mid] > score:
+    end = mid - 1
+elif values[mid] < score:
+    start = mid + 1
+elif values[mid] == score:
+    return mid
+```
+
+하지만, 위 문제에서는 주어진 값 이상의 값이 나오는 위치가 필요하므로, 마지막 일치할 때의 케이스를 초과할 때의 케이스와 합치는 것이 필요했습니다.
+
+```Python
+if values[mid] >= score:
+    end = mid
+elif values[mid] < score:
+    start = mid + 1
+```
+
+이번 문제 풀이를 통해 이러한 탐색 과정을 Lower Bound라고 불리는 것을 알게 되었고 앞으로는 이분 탐색을 더 다양하게 활용해볼 수 있을 것 같습니다.
+
+구현 문제에서 dictionary를 활용하는 문자열 문제는 자주 나오기 때문에 한 번 풀었던 문제라도 다시 풀어보는 연습을 해봐야겠습니다.
 
 ### 문제 설명
 
