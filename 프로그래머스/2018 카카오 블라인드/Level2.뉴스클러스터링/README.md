@@ -38,6 +38,39 @@ def solution(str1, str2):
     return int(inter_sum / union_sum * 65536)
 ```
 
+```Python
+# set 연산을 이용하지 않은 풀이
+from itertools import combinations
+from collections import defaultdict
+
+def get_dict(s):
+    dicts = defaultdict(int)
+    for i in range(len(s)-1):
+        element = s[i:i+2]
+        if element.isalpha():
+            dicts[element] += 1
+    return dicts
+
+def solution(str1, str2):
+    str1, str2 = str1.lower(), str2.lower()
+    dict1, dict2 = get_dict(str1), get_dict(str2)
+
+    intersect = defaultdict()
+    union = dict2
+
+    for key, value in dict1.items():
+        if key in dict2:
+            intersect[key] = min(value, dict2[key])
+            union[key] = max(value, dict2[key])
+        else:
+            union[key] = value
+
+    if len(union) == 0:
+        return 65536
+    return int(sum(intersect.values()) / sum(union.values()) * 65536)
+
+```
+
 ### 배운 점
 
 위 풀이에서 주의할 점은, 문제의 조건이 다중 집합이기 때문에 set 함수를 이용해서 풀이하면 안 되는 것이다. 하지만 조건은 간단하다. 교집합일 때는 해당 원소의 min_count를, 합집합일 때는 max_count를 이용해서 풀면 된다.
