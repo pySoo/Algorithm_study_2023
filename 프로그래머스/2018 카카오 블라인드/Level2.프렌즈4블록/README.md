@@ -8,76 +8,65 @@
 
 ### 풀이 요약
 
-주어진 요건대로 인접한 블록 매트릭스를 제거하는 문제. 2차원 배열을 행/열을 바꾸어서 조작하기 쉽게 만들고, 사라진 블럭의 위치를 set함수의 합집합 연산을 이용하여 구하면 된다.
+주어진 요건대로 인접한 블록 매트릭스를 제거하는 구현 문제입니다. 2x2 모양이 같다면 터트릴 블록 집합에 인덱스를 넣어주고 터트렸다는 것을 알 수 있도록 값을 '-'로 설정합니다. 블록을 터트린 후에는 요소들을 아래로 내려주는 작업이 필요했습니다.
 
-mxn 형태의 보드판이 주어져서 BFS, DFS를 활용해야 하나 고민했는데, 무조건 정사각형 모양으로 사라지며 사라진 부분을 윗 블럭이 메꾸는 작업이 필요했기 때문에 list를 순환하여 푸는 것이 올바른 접근법이었다. 배열을 조작하기 다소 까다로운 문제였다.
+이전에는 행과 열을 바꿔서 풀이했지만 시험 당일과 같이 긴장되는 상황에서는 오히려 실수를 유발할 수 있을 것 같아서 순서대로 블록을 내려주는 방식으로 바꿔서 다시 풀어보았습니다.
 
 ### 나의 풀이
 
-```python
-def pop_block(board, m, n):
-    pop_union_set = set()
-    # 행과 열이 반대인 보드니까
-    for i in range(1, n):
-        for j in range(1, m):
-            if board[i][j] == board[i-1][j-1] == board[i][j-1] == board[i-1][j] != '펑':
-                # 합집합 만들기
-                pop_union_set |= set([(i,j),(i-1,j-1),(i,j-1),(i-1,j)])
-
-    for i,j in pop_union_set:
-        board[i][j] = 0
-
-    # 터져서 사라진 블록을 메꾸는 작업
-    for i, row in enumerate(board):
-        empty_list = ['펑'] * row.count(0)
-        board[i] = empty_list + [block for block in row if block != 0]
-
-    return len(pop_union_set)
-
+````python
 def solution(m, n, board):
-    """
-    풀이 과정
-
-    1. 블록이 터지면 윗 블럭들의 행을 바꿔야하기 때문에 보드의 행과 열을 바꾸어 조작하기 쉽게 만든다.
-
-    기존 보드:
-    ['A','B','C']
-    ['A','A','D']
-    ['A','A','E']
-
-    변환한 보드:
-    ['A','A','A']
-    ['B','A','A']
-    ['C','D','E']
-
-    2. 같은 모양의 2x2 블록을 제거하고 제거된 블럭('0') 개수 반환
-    ['A','0','0']
-    ['B','0','0']
-    ['C','D','E']
-
-    3. 제거된 블록 없애고 위에 있는 블록 땡기기
-    ['펑','펑','A']
-    ['펑','펑','B']
-    ['C','D','E']
-    """
     answer = 0
-    reversed_board = list(map(list,zip(*board)))
+    board = [list(x) for x in board]
+
+    def pop_board(x,y):
+        block = board[x][y]
+        pop_set = set()
+        if board[x+1][y] == board[x][y+1] == board[x+1][y+1] == block:
+            pop_set = {(x,y),(x+1,y),(x,y+1),(x+1,y+1)}
+        return pop_set
+
+    def down_board(board):
+        for y in range(n):
+            for x in range(m-2,-1,-1):
+                for next_x in range(m-1, x, -1):
+                    if board[x][y] != '-' and board[next_x][y] == '-':
+                        board[next_x][y] = board[x][y]
+                        board[x][y] = '-'
+
     while True:
-        pop = pop_block(reversed_board, m, n)
-        if pop == 0:
-            return answer
-        answer += pop
+        pop_set = set()
+        for i in range(m-1):
+            for j in range(n-1):
+                if board[i][j] != '-':
+                    pop_set.update(pop_board(i,j))
+
+        if pop_set:
+            answer += len(pop_set)
+            for x,y in pop_set:
+                board[x][y] = '-'
+            down_board(board)
+        else:
+            break
 
     return answer
-```
+
 
 ### 배운 점
 
-테트리스와 비슷한 보드판 문제는 2차원 배열에서 행과 열을 뒤집어서 조작하면 처리하기 쉽다는 것을 알게 되었다. 테트리스형 문제는 원소가 아래로 내려오는 형태이기 때문에 행을 바꿔주어야 하는데, 이 작업은 스택을 이용해 처리하면 간단해진다는 풀이를 떠올릴 수 있다.
+백준의 Puyo Puyo라는 문제와 매우 비슷한 문제였습니다. 2x2 모양을 발견할 때마다 터트려주는게 아니라, 모든 모양을 발견한 후 한 번에 터트려주는 것이 필요했기 때문에 pop_set에 터트릴 인덱스를 모았다가 한 번에 터트려주었습니다. 그리고 중복되는 인덱스가 있기 때문에 set 자료형을 사용하였습니다.
 
-스택을 이용하면 된다는 발상까지는 떠올렸지만 블럭이 사라졌을 때 인덱스를 조정하고, 블럭이 겹치는 경우의 처리를 어떻게 할 지는 생각해내기 어려웠다. 다른 사람들의 풀이를 참고하였는데 블럭이 겹치는 경우에는 인덱스 값을 집합으로 두고 합집합 연산을 하면 간단하게 처리할 수 있었다. 그리고 블럭이 사라졌을 때는 그 원소를 임의의 값(나의 경우 '펑')으로 치환하고 '펑'의 개수를 반환한 뒤, 다음 처리를 위해서 '0'으로 변경한 리스트를 맨 앞에 넣어주고 아직 사라지지 않은 원소들을 그 뒤에 넣어주는 방식으로 풀이하였다.
+이번 풀이에서 또 헷갈렸던 점은 원소들을 y축 아래로 내려주는 작업이었습니다. 첫 풀이에서는 행을 위에서부터 아래로 내려주었는데 (for x in range(m)), 이렇게 되면 내려준 요소를 다음 반복문에서 또 접근할 수 있게 됩니다. 따라서 내릴 요소가 1개라도 있는 m-2행부터 0번째 행까지의 역순으로 (for x in range(m-2, -1, -1)) 요소를 내려주는 것이 필요했습니다.
 
-어려웠지만 2차원 배열의 조작법과 치환을 이용한 처리라는 아이디어에 대해 배울 수 있어서 유익했다.
+```python
+ def down_board(board):
+        for y in range(n):
+            for x in range(m-2,-1,-1):
+                for next_x in range(m-1, x, -1):
+                    if board[x][y] != '-' and board[next_x][y] == '-':
+                        board[next_x][y] = board[x][y]
+                        board[x][y] = '-'
+```
 
 ### 문제 설명
 
@@ -102,7 +91,6 @@ TMMTTJ
 각 문자는 라이언(R), 무지(M), 어피치(A), 프로도(F), 네오(N), 튜브(T), 제이지(J), 콘(C)을 의미한다
 
 입력으로 블록의 첫 배치가 주어졌을 때, 지워지는 블록은 모두 몇 개인지 판단하는 프로그램을 제작하라.
-
 
 <h4>입력 형식</h4>
 - 입력으로 판의 높이 m, 폭 n과 판의 배치 정보 board가 들어온다.
@@ -130,3 +118,4 @@ TMMTTJ
 </tr>
 </tbody>
       </table>
+````

@@ -1,28 +1,35 @@
-def pop_block(board, m, n):
-    pop_union_set = set()
-    # 행과 열이 반대인 보드니까
-    for i in range(1, n):
-        for j in range(1, m):
-            if board[i][j] == board[i-1][j-1] == board[i][j-1] == board[i-1][j] != '_':
-                # 합집합 만들기
-                pop_union_set |= set([(i,j),(i-1,j-1),(i,j-1),(i-1,j)])
-    
-    for i,j in pop_union_set:
-        board[i][j] = 0
-    
-    for i, row in enumerate(board):
-        empty_list = ['_'] * row.count(0)
-        board[i] = empty_list + [block for block in row if block != 0]
-        
-    return len(pop_union_set)
-    
 def solution(m, n, board):
     answer = 0
-    reversed_board = list(map(list,zip(*board)))
+    board = [list(x) for x in board]
+
+    def bfs(x,y):
+        block = board[x][y]
+        pop_set = set()
+        if board[x+1][y] == board[x][y+1] == board[x+1][y+1] == block:
+            pop_set = {(x,y),(x+1,y),(x,y+1),(x+1,y+1)}
+        return pop_set
+                
+    def down_board(board):
+        for y in range(n):
+            for x in range(m-2,-1,-1):
+                for next_x in range(m-1, x, -1):
+                    if board[x][y] != '-' and board[next_x][y] == '-':
+                        board[next_x][y] = board[x][y]
+                        board[x][y] = '-'
+                        
     while True:
-        pop = pop_block(reversed_board, m, n)
-        if pop == 0:
-            return answer
-        answer += pop
+        pop_set = set()
+        for i in range(m-1):
+            for j in range(n-1):
+                if board[i][j] != '-':
+                    pop_set.update(bfs(i,j))
+        
+        if pop_set:
+            answer += len(pop_set)
+            for x,y in pop_set:
+                board[x][y] = '-'
+            down_board(board)
+        else:
+            break
     
     return answer
