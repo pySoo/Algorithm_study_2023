@@ -14,7 +14,7 @@
 
 ### 나의 풀이
 
-````python
+```python
 def solution(m, n, board):
     answer = 0
     board = [list(x) for x in board]
@@ -50,7 +50,7 @@ def solution(m, n, board):
             break
 
     return answer
-
+```
 
 ### 배운 점
 
@@ -118,4 +118,3 @@ TMMTTJ
 </tr>
 </tbody>
       </table>
-````
